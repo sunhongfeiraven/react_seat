@@ -1,5 +1,5 @@
 import React from 'react';
-import SeatSetModal from '../components/SeatSetModal';
+import SeatSetModal from '../components/SeatCanvas';
 
 class Home extends React.Component {
   state = {

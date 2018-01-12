@@ -1,8 +1,6 @@
 import React from 'react';
-import { Button } from 'antd';
-import SeatSetModal from '../components/SeatSetModal';
-
-// import styles from './IndexPage.css';
+import { Button, Modal } from 'antd';
+import SeatSetModal from '../components/SeatCanvas';
 
 class Home extends React.Component {
   state = {
@@ -24,13 +22,17 @@ class Home extends React.Component {
     return (
       <div style={{ padding: 30 }}>
         <Button onClick={this.showSeatSetModal}>座位编辑</Button>
-        <SeatSetModal
-          row={100}
-          col={20}
+        <Modal
+          title="Basic Modal"
           visible={setModalVisbile}
-          onOk={this.hideSeatSetModal}
-          onCancel={this.hideSeatSetModal}
-        />
+          onOk={e => this.hideSeatSetModal(e, false)}
+          onCancel={e => this.hideSeatSetModal(e, false)}
+          width={1200}
+          style={{ top: 20, width: 800 }}
+          bodyStyle={{ height: 800 }}
+        >
+          <SeatSetModal row={20} col={20} type="area" />
+        </Modal>
       </div>
     );
   }
