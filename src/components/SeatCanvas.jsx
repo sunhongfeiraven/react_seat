@@ -2,15 +2,26 @@
 // todo 1. 鼠标移入显示坐标
 // todo 2. 取消其他模式下的点击事件
 import React from 'react';
-import { Button, Row, Col, Icon, Select } from 'antd';
+import { Radio, Row, Col, Icon, Select, Button } from 'antd';
 import PropTypes from 'prop-types';
 import G6 from '@antv/g6';
 
-const ButtonGroup = Button.Group;
-const Option = Select.Option;
+const RadioButton = Radio.Button;
+const RadioGroup = Radio.Group;
 
 const seatWidth = 30; // 座位宽度
 const INTERVAL = 10; // 边距
+const statusMap = {
+  // 是否为座位状态
+  '0': '#fff',
+  '1': '#979797',
+};
+const seatStatusMap = {
+  '0': '',
+  '1': '#',
+  '2': '@',
+  '3': '$',
+};
 
 function getSeatData(row, col) {
   let data = [];
@@ -27,7 +38,6 @@ function getSeatData(row, col) {
           y: j * seatWidth + j * INTERVAL,
           label: j,
           type: 'label',
-          stroke: '#fff',
         });
       } else if (j === 0) {
         data.push({
@@ -38,7 +48,6 @@ function getSeatData(row, col) {
           y: j * seatWidth + j * INTERVAL,
           label: i,
           type: 'label',
-          stroke: '#fff',
         });
       } else {
         data.push({
@@ -49,6 +58,7 @@ function getSeatData(row, col) {
           seatY: j,
           rowIndex: i,
           columnIndex: j,
+          status: '1',
           id: `seat-${i}-${j}`,
           x: i * seatWidth + i * INTERVAL,
           y: j * seatWidth + j * INTERVAL,
@@ -63,15 +73,51 @@ function getSeatData(row, col) {
 class SeatSetModal extends React.Component {
   state = {
     mode: 'default',
-    color: '#979797',
-    fill: '#EE5656',
+    status: '1', // 空座位及可用状态
+    seatStatus: '0', // 表示可售状态
+    area: false,
+  };
+
+  static defaultProps = {
+    height: 500,
   };
 
   componentDidMount() {
-    this.renderSeat();
+    if (this.props.type === 'create') {
+      this.renderSeatCreate();
+    } else if (this.props.type === 'area') {
+      this.renderSeatByData();
+    }
   }
 
-  renderSeat = () => {
+  renderSeatByData() {
+    const { data } = this.props;
+    this.net = new G6.Net({
+      id: 'seatSet', // 容器ID
+      mode: 'default', // 编辑模式
+      modes: {
+        default: ['clickBlankClearActive', 'multiSelect'],
+        drag: ['dragCanvas', 'shortcut', 'wheelZoom'],
+      },
+      grid: null, // 是否显示网格
+      fitView: 'tl',
+      height: this.props.height, // 画布高
+    });
+
+    this.net.node().tooltip(obj => {
+      return [['Id是', obj.id]];
+    });
+
+    this.net.tooltip(true);
+
+    this.net.source(data);
+
+    this.handleBindEvents();
+
+    this.net.render();
+  }
+
+  renderSeatCreate = () => {
     const { row, col } = this.props;
 
     this.net = new G6.Net({
@@ -83,7 +129,7 @@ class SeatSetModal extends React.Component {
       },
       grid: null, // 是否显示网格
       fitView: 'tl',
-      height: 500, // 画布高
+      height: this.props.height, // 画布高
     });
 
     this.net.node().tooltip(obj => {
@@ -99,46 +145,78 @@ class SeatSetModal extends React.Component {
     this.net.render();
   };
 
+  bindEvents = item => {
+    const { status, mode, seatStatus, area } = this.state;
+    const editType = this.props.type;
+    const { performPackageId, color } = this.props;
+    const type = item.get('model').type; // 座位type
+    const currentStatus = item.get('model').status; // 座位status
+    const currentPerformPackageId = item.get('model').performPackageId;
+    if (type === 'seat') {
+      if (editType === 'create') {
+        this.net.update(item, { color: statusMap[status], status });
+      } else if (editType === 'area') {
+        if (currentStatus === '1') {
+          let newColor = statusMap[1];
+          if (area) {
+            if (!currentPerformPackageId || currentPerformPackageId === performPackageId) {
+              newColor = color;
+            }
+          }
+          this.net.update(item, {
+            color: newColor,
+            performPackageId,
+            label: seatStatusMap[seatStatus],
+            seatStatus,
+          });
+        }
+      }
+      this.net.refresh();
+    }
+  };
+
   // 绑定元素事件
   handleBindEvents = () => {
     if (!this.net) return;
+    const { mode } = this.state;
     this.net.off('itemactived', () => {});
     this.net.off('itemclick', () => {});
+
     this.net.on('itemactived', ev => {
-      const { color } = this.state;
       const item = ev.item;
-      const type = item.get('model').type;
-      if (type === 'seat') {
-        this.net.update(item, { color });
-        this.net.refresh();
-      }
+      this.bindEvents(item);
     });
+
     this.net.on('itemclick', ev => {
-      const { color, mode, fill } = this.state;
       if (mode !== 'default') return; //只在编辑模式生效
       const item = ev.item;
-      const type = item.get('model').type;
-      if (type === 'seat') {
-        console.log(item.get('model'), fill);
-        this.net.update(item, { color, label: '#' });
-        this.net.refresh();
-      }
+      this.bindEvents(item);
     });
   };
 
-  handleModeChange = (e, mode) => {
+  handleModeChange = e => {
+    const mode = e.target.value;
     this.net && this.net.changeMode(mode);
-    this.setState({ mode }, () => {
+    this.setState({ mode });
+  };
+
+  handleStatusChange = e => {
+    const status = e.target.value;
+    this.setState({ status }, () => {
       this.handleBindEvents();
     });
   };
 
-  handleColorChange = (e, color) => {
-    this.setState({ color });
+  handleSeatStatusChange = e => {
+    const seatStatus = e.target.value;
+    this.setState({ seatStatus }, () => {
+      this.handleBindEvents();
+    });
   };
 
-  handleFillChange = (e, fill) => {
-    this.setState({ fill }, () => {
+  handleAreaChange = e => {
+    const area = e.target.value;
+    this.setState({ area: area === '1' ? true : false }, () => {
       this.handleBindEvents();
     });
   };
@@ -150,21 +228,39 @@ class SeatSetModal extends React.Component {
   };
 
   render() {
-    const { type } = this.props;
+    const { type, height } = this.props;
     const btnTypes = () => {
       if (type === 'create') {
         return (
-          <ButtonGroup style={{ marginBottom: 16, marginRight: 8 }}>
-            <Button onClick={e => this.handleColorChange(e, '#979797')}>新增</Button>
-            <Button onClick={e => this.handleColorChange(e, '#ffffff')}>删除</Button>
-          </ButtonGroup>
+          <RadioGroup
+            style={{ marginBottom: 16, marginRight: 8 }}
+            onChange={this.handleStatusChange}
+          >
+            <RadioButton value="1">座位</RadioButton>
+            <RadioButton value="0">非座位</RadioButton>
+          </RadioGroup>
         );
       } else if (type === 'area') {
-        return (
-          <ButtonGroup style={{ marginBottom: 16, marginRight: 8 }}>
-            <Button onClick={e => this.handleFillChange(e, '#EE5656')}>预留</Button>
-          </ButtonGroup>
-        );
+        return [
+          <RadioGroup
+            style={{ marginBottom: 16, marginRight: 8 }}
+            key="1"
+            onChange={this.handleAreaChange}
+          >
+            <RadioButton value="1">区域选择</RadioButton>
+            <RadioButton value="0">取消区域选择</RadioButton>
+          </RadioGroup>,
+          <RadioGroup
+            style={{ marginBottom: 16, marginRight: 8 }}
+            key="2"
+            onChange={this.handleSeatStatusChange}
+          >
+            <RadioButton value="0">可售</RadioButton>
+            <RadioButton value="1">预留#</RadioButton>
+            <RadioButton value="2">已售@</RadioButton>
+            <RadioButton value="3">锁定$</RadioButton>
+          </RadioGroup>,
+        ];
       }
     };
 
@@ -172,15 +268,18 @@ class SeatSetModal extends React.Component {
       <div>
         <Row type="flex" justify="end">
           {btnTypes()}
-          <ButtonGroup style={{ marginBottom: 16 }}>
-            <Button onClick={e => this.handleModeChange(e, 'default')}>编辑模式</Button>
-            <Button onClick={e => this.handleModeChange(e, 'drag')}>预览模式</Button>
-            <Button onClick={this.handleSave} type="primary">
-              保存
-            </Button>
-          </ButtonGroup>
+          <RadioGroup style={{ marginBottom: 16, marginRight: 8 }} onChange={this.handleModeChange}>
+            <RadioButton value="default">编辑模式</RadioButton>
+            <RadioButton value="drag">预览模式</RadioButton>
+          </RadioGroup>
+          <Button onClick={this.handleSave} type="primary">
+            保存
+          </Button>
         </Row>
-        <div id="seatSet" style={{ border: '1px solid #333', overflow: 'hidden' }} />
+        <div
+          id="seatSet"
+          style={{ border: '1px solid #333', overflow: 'hidden', height: height }}
+        />
       </div>
     );
   }
