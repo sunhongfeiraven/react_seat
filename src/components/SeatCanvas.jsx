@@ -14,7 +14,7 @@ const INTERVAL = 10; // 边距
 const statusMap = {
   // 是否为座位状态
   '0': '#fff',
-  '1': '#979797',
+  '1': '#0EAB0F',
 };
 const seatStatusMap = {
   '0': '',
@@ -70,6 +70,62 @@ function getSeatData(row, col) {
   return data;
 }
 
+// todo 返回编辑时 渲染颜色
+function reBuildSeatData(source) {
+  let data = source;
+  let maxX = 0;
+  let maxY = 0;
+  source.forEach(item => {
+    if (item.seatX > maxX) {
+      maxX = item.seatX;
+    }
+    if (item.seatY > maxY) {
+      maxY = item.seatY;
+    }
+  });
+
+  // 先添加坐标
+  data = data.map(item => {
+    return {
+      ...item,
+      x: item.seatX * seatWidth + item.seatX * INTERVAL,
+      y: item.seatY * seatWidth + item.seatY * INTERVAL,
+      color: statusMap[item.status],
+      size: seatWidth,
+      shape: 'rect',
+      type: 'seat',
+    };
+  });
+
+  for (let i = 0; i < maxX + 1; i++) {
+    for (let j = 0; j < maxY + 1; j++) {
+      if (i === 0) {
+        data.push({
+          shape: 'text',
+          size: 20,
+          id: `label-${i}-${j}`,
+          x: i * seatWidth + i * INTERVAL,
+          y: j * seatWidth + j * INTERVAL,
+          label: j,
+          type: 'label',
+        });
+      } else if (j === 0) {
+        data.push({
+          shape: 'text',
+          size: 20,
+          id: `label-${i}-${j}`,
+          x: i * seatWidth + i * INTERVAL,
+          y: j * seatWidth + j * INTERVAL,
+          label: i,
+          type: 'label',
+        });
+      }
+    }
+  }
+
+  return data;
+}
+
 class SeatSetModal extends React.Component {
   state = {
     mode: 'default',
@@ -104,13 +160,15 @@ class SeatSetModal extends React.Component {
       height: this.props.height, // 画布高
     });
 
+    this.net.source(reBuildSeatData(data));
+
     this.net.node().tooltip(obj => {
-      return [['Id是', obj.id]];
+      if (obj.type === 'seat' && obj.status === '1') {
+        return [['行', obj.seatX], ['列', obj.seatY]];
+      }
     });
 
     this.net.tooltip(true);
-
-    this.net.source(data);
 
     this.handleBindEvents();
 
@@ -132,13 +190,15 @@ class SeatSetModal extends React.Component {
       height: this.props.height, // 画布高
     });
 
+    this.net.source(getSeatData(row, col));
+
     this.net.node().tooltip(obj => {
-      return [['Id是', obj.id]];
+      if (obj.type === 'seat' && obj.status === '1') {
+        return [['行', obj.seatX], ['列', obj.seatY]];
+      }
     });
 
     this.net.tooltip(true);
-
-    this.net.source(getSeatData(row, col));
 
     this.handleBindEvents();
 
