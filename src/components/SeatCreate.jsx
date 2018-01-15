@@ -58,7 +58,7 @@ function getSeatData(row, col) {
 class SeatSetModal extends React.Component {
   state = {
     mode: 'default',
-    status: '1', // 空座位及可用状态
+    status: '0', // 空座位及可用状态
   };
 
   static defaultProps = {
@@ -164,6 +164,7 @@ class SeatSetModal extends React.Component {
       delete data.shape;
       delete data.type;
       delete data.size;
+      delete data.id;
       return data;
     });
 
@@ -177,13 +178,18 @@ class SeatSetModal extends React.Component {
       <div>
         <Row type="flex" justify="end">
           <RadioGroup
+            defaultValue="0"
             style={{ marginBottom: 16, marginRight: 8 }}
             onChange={this.handleStatusChange}
           >
             <RadioButton value="1">座位</RadioButton>
             <RadioButton value="0">非座位</RadioButton>
           </RadioGroup>
-          <RadioGroup style={{ marginBottom: 16, marginRight: 8 }} onChange={this.handleModeChange}>
+          <RadioGroup
+            defaultValue="default"
+            style={{ marginBottom: 16, marginRight: 8 }}
+            onChange={this.handleModeChange}
+          >
             <RadioButton value="default">编辑模式</RadioButton>
             <RadioButton value="drag">预览模式</RadioButton>
           </RadioGroup>
