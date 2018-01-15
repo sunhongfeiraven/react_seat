@@ -1247,6 +1247,7 @@ class Home extends React.Component {
           visible={seatUpdateVisible}
           onCancel={e => this.hideSeatUpdateModal(e, false)}
           width={1200}
+          destroyOnClose
           style={{ top: 20, width: 800 }}
           footer={false}
         >
@@ -1260,6 +1261,7 @@ class Home extends React.Component {
         <Modal
           title="座位生成"
           visible={seatCreateVisbile}
+          destroyOnClose
           onCancel={e => this.hideSeatCreateModal(e, false)}
           width={1200}
           style={{ top: 20, width: 800 }}
