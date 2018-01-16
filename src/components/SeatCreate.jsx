@@ -224,7 +224,6 @@ class SeatSetModal extends React.Component {
     }
     if (status === '1') {
       if (emptyRows.indexOf(seatY) !== -1) {
-        let newEmptyRows = emptyRows.splice(emptyRows.indexOf(seatY), 1);
         this.setState({ emptyRows: emptyRows.splice(emptyRows.indexOf(seatY), 1) });
         nodes.map(item => {
           if (item.seatY > rowIndex) {
