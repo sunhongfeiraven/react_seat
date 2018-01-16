@@ -55,6 +55,61 @@ function getSeatData(row, col) {
   return data;
 }
 
+function reBuildSeatData(source) {
+  let data = source;
+  let maxX = 0;
+  let maxY = 0;
+
+  source.forEach(item => {
+    if (item.seatX > maxX) {
+      maxX = item.seatX;
+    }
+    if (item.seatY > maxY) {
+      maxY = item.seatY;
+    }
+  });
+
+  data = data.map(item => {
+    return {
+      ...item,
+      x: item.seatX * SEATSISE + item.seatX * INTERVAL,
+      y: item.seatY * SEATSISE + item.seatY * INTERVAL,
+      color: STATUS_MAP[item.status],
+      size: SEATSISE,
+      shape: 'rect',
+      type: 'seat',
+    };
+  });
+
+  for (let i = 0; i < maxX + 1; i++) {
+    for (let j = 0; j < maxY + 1; j++) {
+      if (i === 0 && j <= maxY) {
+        data.push({
+          shape: 'text',
+          size: 20,
+          id: `label-${i}-${j}`,
+          x: i * SEATSISE + i * INTERVAL,
+          y: j * SEATSISE + j * INTERVAL,
+          label: j,
+          type: 'label',
+        });
+      } else if (j === 0 && i <= maxX) {
+        data.push({
+          shape: 'text',
+          size: 20,
+          id: `label-${i}-${j}`,
+          x: i * SEATSISE + i * INTERVAL,
+          y: j * SEATSISE + j * INTERVAL,
+          label: i,
+          type: 'label',
+        });
+      }
+    }
+  }
+
+  return data;
+}
+
 class SeatSetModal extends React.Component {
   state = {
     mode: 'default',
@@ -67,8 +122,41 @@ class SeatSetModal extends React.Component {
   };
 
   componentDidMount() {
-    this.renderSeatCreate();
+    if (this.props.data && this.props.data.length > 0) {
+      this.renderSeatByData();
+    } else {
+      this.renderSeatCreate();
+    }
   }
+
+  renderSeatByData = () => {
+    const { data } = this.props;
+    this.net = new G6.Net({
+      id: 'seatCreate', // 容器ID
+      mode: 'default', // 编辑模式
+      modes: {
+        default: ['clickBlankClearActive', 'multiSelect'],
+        drag: ['dragCanvas', 'shortcut', 'wheelZoom', 'clickBlankClearActive'],
+      },
+      grid: null, // 是否显示网格
+      fitView: 'tl',
+      height: this.props.height, // 画布高
+    });
+
+    this.net.source(reBuildSeatData(data));
+
+    this.net.node().tooltip(obj => {
+      if (obj.type === 'seat' && obj.status === '1') {
+        return [['排', obj.rowIndex], ['坐', obj.columnIndex]];
+      }
+    });
+
+    this.net.tooltip(true);
+
+    this.handleBindEvents();
+
+    this.net.render();
+  };
 
   renderSeatCreate = () => {
     const { row, col } = this.props;
@@ -117,6 +205,7 @@ class SeatSetModal extends React.Component {
   rePlaceSeats = (rowIndex, columnIndex, seatY, status) => {
     const saveData = this.net.save();
     const nodes = saveData.source.nodes;
+    console.log(nodes);
     const { emptyRows } = this.state;
     const rowSeats = nodes.filter(item => {
       return item.type === 'seat' && item.rowIndex === rowIndex && item.status === '1';
@@ -126,6 +215,7 @@ class SeatSetModal extends React.Component {
     });
     // 此行空了的时候
     if (rowSeats.length === 0) {
+      console.log('empty');
       this.setState({
         emptyRows: [...emptyRows, seatY],
       });
@@ -247,6 +337,7 @@ SeatSetModal.propTypes = {
   row: PropTypes.number.isRequired,
   col: PropTypes.number.isRequired,
   onSave: PropTypes.func.isRequired,
+  data: PropTypes.array,
 };
 
 export default SeatSetModal;

@@ -106,7 +106,7 @@ class SeatSetModal extends React.Component {
 
     this.net.node().tooltip(obj => {
       if (obj.type === 'seat' && obj.status === '1') {
-        return [['排', obj.seatY], ['列', obj.seatX]];
+        return [['排', obj.rowIndex], ['坐', obj.columnIndex]];
       }
     });
 
