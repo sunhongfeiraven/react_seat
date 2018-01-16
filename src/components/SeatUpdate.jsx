@@ -73,7 +73,6 @@ function reBuildSeatData(source) {
 
 class SeatSetModal extends React.Component {
   state = {
-    mode: 'default',
     status: '1', // 空座位及可用状态
     seatStatus: '0', // 表示可售状态
     area: false,
@@ -84,7 +83,6 @@ class SeatSetModal extends React.Component {
   };
 
   componentDidMount() {
-    console.log('updateDidMount');
     this.renderSeatByData();
   }
 
@@ -118,7 +116,7 @@ class SeatSetModal extends React.Component {
   }
 
   bindEvents = item => {
-    const { status, mode, seatStatus, area } = this.state;
+    const { status, seatStatus, area } = this.state;
     const { performPackageId, color } = this.props;
     const currentType = item.get('model').type; // 座位type
     const currentStatus = item.get('model').status; // 座位status
@@ -145,42 +143,35 @@ class SeatSetModal extends React.Component {
   // 绑定元素事件
   handleBindEvents = () => {
     if (!this.net) return;
-    const { mode } = this.state;
-    this.net.off('itemactived', () => {});
-    this.net.off('itemclick', () => {});
+    const self = this;
 
-    this.net.on('itemactived', ev => {
+    this.net.on('itemactived', function(ev) {
       const item = ev.item;
-      this.bindEvents(item);
+      self.bindEvents(item);
     });
 
-    this.net.on('itemclick', ev => {
-      if (mode !== 'default') return; //只在编辑模式生效
+    this.net.on('itemclick', function(ev) {
+      const { mode } = self.net._attrs;
       const item = ev.item;
-      this.bindEvents(item);
+      if (mode === 'default') {
+        self.bindEvents(item);
+      }
     });
   };
 
   handleModeChange = e => {
     const mode = e.target.value;
     this.net && this.net.changeMode(mode);
-    this.setState({ mode }, () => {
-      this.handleBindEvents();
-    });
   };
 
   handleSeatStatusChange = e => {
     const seatStatus = e.target.value;
-    this.setState({ seatStatus }, () => {
-      this.handleBindEvents();
-    });
+    this.setState({ seatStatus });
   };
 
   handleAreaChange = e => {
     const area = e.target.value;
-    this.setState({ area: area === '1' ? true : false }, () => {
-      this.handleBindEvents();
-    });
+    this.setState({ area: area === '1' ? true : false });
   };
 
   handleSave = () => {
