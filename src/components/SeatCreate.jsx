@@ -118,7 +118,6 @@ class SeatSetModal extends React.Component {
     const saveData = this.net.save();
     const nodes = saveData.source.nodes;
     const { emptyRows } = this.state;
-    console.log('emptyRows', emptyRows);
     const rowSeats = nodes.filter(item => {
       return item.type === 'seat' && item.rowIndex === rowIndex && item.status === '1';
     });
@@ -139,7 +138,6 @@ class SeatSetModal extends React.Component {
     if (status === '1') {
       if (emptyRows.indexOf(seatY) !== -1) {
         let newEmptyRows = emptyRows.splice(emptyRows.indexOf(seatY), 1);
-        console.log(newEmptyRows);
         this.setState({ emptyRows: emptyRows.splice(emptyRows.indexOf(seatY), 1) });
         nodes.map(item => {
           if (item.seatY > rowIndex) {
