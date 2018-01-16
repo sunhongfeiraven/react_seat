@@ -205,7 +205,6 @@ class SeatSetModal extends React.Component {
   rePlaceSeats = (rowIndex, columnIndex, seatY, status) => {
     const saveData = this.net.save();
     const nodes = saveData.source.nodes;
-    console.log(nodes);
     const { emptyRows } = this.state;
     const rowSeats = nodes.filter(item => {
       return item.type === 'seat' && item.rowIndex === rowIndex && item.status === '1';
@@ -215,7 +214,6 @@ class SeatSetModal extends React.Component {
     });
     // 此行空了的时候
     if (rowSeats.length === 0) {
-      console.log('empty');
       this.setState({
         emptyRows: [...emptyRows, seatY],
       });
