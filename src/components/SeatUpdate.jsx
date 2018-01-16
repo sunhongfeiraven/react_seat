@@ -36,6 +36,7 @@ function reBuildSeatData(source) {
       y: item.seatY * SEATSISE + item.seatY * INTERVAL,
       color: STATUS_MAP[item.status],
       size: SEATSISE,
+      label: SEAT_STATUS_MAP[item.seatStatus],
       shape: 'rect',
       type: 'seat',
     };

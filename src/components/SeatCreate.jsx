@@ -59,6 +59,7 @@ class SeatSetModal extends React.Component {
   state = {
     mode: 'default',
     status: '0', // 空座位及可用状态
+    emptyRows: [],
   };
 
   static defaultProps = {
@@ -88,7 +89,7 @@ class SeatSetModal extends React.Component {
 
     this.net.node().tooltip(obj => {
       if (obj.type === 'seat' && obj.status === '1') {
-        return [['排', obj.seatY], ['列', obj.seatX]];
+        return [['排', obj.rowIndex], ['坐', obj.columnIndex]];
       }
     });
 
@@ -103,9 +104,49 @@ class SeatSetModal extends React.Component {
     const { status, mode, seatStatus, area } = this.state;
     const editType = this.props.type;
     const currentType = item.get('model').type; // 座位type
+    const { rowIndex, columnIndex, seatX, seatY } = item.get('model');
     if (currentType === 'seat') {
       this.net.update(item, { color: STATUS_MAP[status], status });
+      // 重排start
+      this.rePlaceSeats(rowIndex, columnIndex, seatY, status);
+      // 重排end
       this.net.refresh();
+    }
+  };
+
+  rePlaceSeats = (rowIndex, columnIndex, seatY, status) => {
+    const saveData = this.net.save();
+    const nodes = saveData.source.nodes;
+    const { emptyRows } = this.state;
+    console.log('emptyRows', emptyRows);
+    const rowSeats = nodes.filter(item => {
+      return item.type === 'seat' && item.rowIndex === rowIndex && item.status === '1';
+    });
+    rowSeats.map((item, index) => {
+      this.net.update(item.id, { columnIndex: index + 1 });
+    });
+    // 此行空了的时候
+    if (rowSeats.length === 0) {
+      this.setState({
+        emptyRows: [...emptyRows, seatY],
+      });
+      nodes.map(item => {
+        if (item.seatY > rowIndex) {
+          this.net.update(item.id, { rowIndex: item.rowIndex - 1 });
+        }
+      });
+    }
+    if (status === '1') {
+      if (emptyRows.indexOf(seatY) !== -1) {
+        let newEmptyRows = emptyRows.splice(emptyRows.indexOf(seatY), 1);
+        console.log(newEmptyRows);
+        this.setState({ emptyRows: emptyRows.splice(emptyRows.indexOf(seatY), 1) });
+        nodes.map(item => {
+          if (item.seatY > rowIndex) {
+            this.net.update(item.id, { rowIndex: item.rowIndex + 1 });
+          }
+        });
+      }
     }
   };
 
@@ -139,13 +180,6 @@ class SeatSetModal extends React.Component {
   handleStatusChange = e => {
     const status = e.target.value;
     this.setState({ status }, () => {
-      this.handleBindEvents();
-    });
-  };
-
-  handleAreaChange = e => {
-    const area = e.target.value;
-    this.setState({ area: area === '1' ? true : false }, () => {
       this.handleBindEvents();
     });
   };

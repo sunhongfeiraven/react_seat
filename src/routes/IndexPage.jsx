@@ -1267,7 +1267,7 @@ class Home extends React.Component {
           style={{ top: 20, width: 800 }}
           footer={false}
         >
-          <SeatCreate row={5} col={5} onSave={this.handelDataSave} />
+          <SeatCreate row={5} col={6} onSave={this.handelDataSave} />
         </Modal>
       </div>
     );
