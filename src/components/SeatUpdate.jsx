@@ -121,20 +121,19 @@ class SeatSetModal extends React.Component {
     const currentType = item.get('model').type; // 座位type
     const currentStatus = item.get('model').status; // 座位status
     const currentPerformPackageId = item.get('model').performPackageId;
+    let newPerformPackageId = null;
     if (currentType === 'seat') {
       if (currentStatus === '1') {
-        let newColor = STATUS_MAP[1];
         if (area) {
           if (!currentPerformPackageId || currentPerformPackageId === performPackageId) {
-            newColor = color;
+            this.net.update(item, {
+              color,
+              performPackageId,
+              label: SEAT_STATUS_MAP[seatStatus],
+              seatStatus,
+            });
           }
         }
-        this.net.update(item, {
-          color: newColor,
-          performPackageId,
-          label: SEAT_STATUS_MAP[seatStatus],
-          seatStatus,
-        });
       }
       this.net.refresh();
     }

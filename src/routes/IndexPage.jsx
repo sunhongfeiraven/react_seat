@@ -15,6 +15,7 @@ const dataJson = [
     status: '1',
     id: 'seat-1-1',
     color: '#979797',
+    performPackageId: '213234',
   },
   {
     shape: 'rect',
