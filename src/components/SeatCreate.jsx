@@ -129,7 +129,7 @@ class SeatSetModal extends React.Component {
   }
 
   renderSeatByData = () => {
-    const { data } = this.props;
+    const { data, colorMap } = this.props;
     this.net = new G6.Net({
       id: 'seatCreate', // 容器ID
       mode: 'default', // 编辑模式
@@ -291,7 +291,7 @@ class SeatSetModal extends React.Component {
       <div>
         <Row type="flex" justify="end">
           <RadioGroup
-            defaultValue="0"
+            value={this.state.status}
             style={{ marginBottom: 16, marginRight: 8 }}
             onChange={this.handleStatusChange}
           >

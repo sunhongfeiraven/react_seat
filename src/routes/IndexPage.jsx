@@ -15,6 +15,7 @@ const dataJson = [
     status: '1',
     id: 'seat-1-1',
     color: '#979797',
+    packageId: '213234',
     performPackageId: '213234',
   },
   {
@@ -27,6 +28,7 @@ const dataJson = [
     columnIndex: 2,
     status: '1',
     id: 'seat-1-2',
+    packageId: '213234',
     color: '#979797',
   },
   {
@@ -1254,6 +1256,16 @@ class Home extends React.Component {
         >
           <SeatUpdate
             color={'#D03838'}
+            colorMap={[
+              {
+                packageId: '213234',
+                color: '#00FDFC',
+              },
+              {
+                packageId: '',
+                color: '#F51BC3',
+              },
+            ]}
             performPackageId={'abe123'}
             data={dataJson}
             onSave={this.handelDataSave}

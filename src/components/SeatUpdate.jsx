@@ -8,8 +8,7 @@ import G6 from '@antv/g6';
 const RadioButton = Radio.Button;
 const RadioGroup = Radio.Group;
 
-// todo 返回编辑时 渲染颜色
-function reBuildSeatData(source) {
+function reBuildSeatData(source, colorMap) {
   let data = source;
   let maxX = 0;
   let maxY = 0;
@@ -25,16 +24,17 @@ function reBuildSeatData(source) {
   });
 
   // 先添加坐标
-  data = data.filter(item => {
-    return item.status === '1';
-  });
-
-  data = data.map(item => {
+  data = data.filter(item => item.status === '1').map(item => {
+    // 初始化颜色逻辑
+    let newColor = STATUS_MAP[item.status];
+    if (item.packageId) {
+      newColor = colorMap.filter(i => i.packageId === item.packageId)[0].color;
+    }
     return {
       ...item,
       x: item.seatX * SEATSISE + item.seatX * INTERVAL,
       y: item.seatY * SEATSISE + item.seatY * INTERVAL,
-      color: STATUS_MAP[item.status],
+      color: newColor,
       size: SEATSISE,
       label: SEAT_STATUS_MAP[item.seatStatus],
       shape: 'rect',
@@ -73,9 +73,8 @@ function reBuildSeatData(source) {
 
 class SeatSetModal extends React.Component {
   state = {
-    status: '1', // 空座位及可用状态
     seatStatus: '0', // 表示可售状态
-    area: false,
+    area: '1',
   };
 
   static defaultProps = {
@@ -87,7 +86,7 @@ class SeatSetModal extends React.Component {
   }
 
   renderSeatByData() {
-    const { data } = this.props;
+    const { data, colorMap } = this.props;
     this.net = new G6.Net({
       id: 'seatUpdate', // 容器ID
       mode: 'default', // 编辑模式
@@ -100,7 +99,7 @@ class SeatSetModal extends React.Component {
       height: this.props.height, // 画布高
     });
 
-    this.net.source(reBuildSeatData(data));
+    this.net.source(reBuildSeatData(data, colorMap));
 
     this.net.node().tooltip(obj => {
       if (obj.type === 'seat' && obj.status === '1') {
@@ -116,7 +115,7 @@ class SeatSetModal extends React.Component {
   }
 
   bindEvents = item => {
-    const { status, seatStatus, area } = this.state;
+    const { seatStatus, area } = this.state;
     const { performPackageId, color } = this.props;
     const currentType = item.get('model').type; // 座位type
     const currentStatus = item.get('model').status; // 座位status
@@ -124,7 +123,7 @@ class SeatSetModal extends React.Component {
     let newPerformPackageId = null;
     if (currentType === 'seat') {
       if (currentStatus === '1') {
-        if (area) {
+        if (area === '1') {
           if (!currentPerformPackageId || currentPerformPackageId === performPackageId) {
             this.net.update(item, {
               color,
@@ -170,7 +169,7 @@ class SeatSetModal extends React.Component {
 
   handleAreaChange = e => {
     const area = e.target.value;
-    this.setState({ area: area === '1' ? true : false });
+    this.setState({ area });
   };
 
   handleSave = () => {
@@ -195,6 +194,7 @@ class SeatSetModal extends React.Component {
 
   render() {
     const { type, height } = this.props;
+    const { area, seatStatus } = this.state;
 
     return (
       <div>
@@ -202,6 +202,7 @@ class SeatSetModal extends React.Component {
           <RadioGroup
             style={{ marginBottom: 16, marginRight: 8 }}
             key="1"
+            value={area}
             onChange={this.handleAreaChange}
           >
             <RadioButton value="1">区域选择</RadioButton>
@@ -210,14 +211,19 @@ class SeatSetModal extends React.Component {
           <RadioGroup
             style={{ marginBottom: 16, marginRight: 8 }}
             key="2"
+            value={seatStatus}
             onChange={this.handleSeatStatusChange}
           >
             <RadioButton value="0">可售</RadioButton>
             <RadioButton value="1">预留（留）</RadioButton>
-            <RadioButton value="2">已售（售）</RadioButton>
-            <RadioButton value="3">锁定（锁）</RadioButton>
+            {/* <RadioButton value="2">已售（售）</RadioButton> */}
+            {/* <RadioButton value="3">锁定（锁）</RadioButton> */}
           </RadioGroup>
-          <RadioGroup style={{ marginBottom: 16, marginRight: 8 }} onChange={this.handleModeChange}>
+          <RadioGroup
+            style={{ marginBottom: 16, marginRight: 8 }}
+            defaultValue="default"
+            onChange={this.handleModeChange}
+          >
             <RadioButton value="default">编辑模式</RadioButton>
             <RadioButton value="drag">预览模式</RadioButton>
           </RadioGroup>
