@@ -14,12 +14,11 @@ function reBuildSeatData(source, colorMap) {
   let maxY = 0;
 
   source.forEach(item => {
-    if (item.status !== '1') return;
-    if (item.seatX > maxX) {
-      maxX = item.seatX;
+    if (Number(item.seatX) > maxX) {
+      maxX = Number(item.seatX);
     }
     if (item.seatY > maxY) {
-      maxY = item.seatY;
+      maxY = Number(item.seatY);
     }
   });
 
@@ -36,7 +35,7 @@ function reBuildSeatData(source, colorMap) {
       y: item.seatY * SEATSISE + item.seatY * INTERVAL,
       color: newColor,
       size: SEATSISE,
-      label: SEAT_STATUS_MAP[item.seatStatus],
+      label: SEAT_STATUS_MAP[Number(item.seatStatus)],
       shape: 'rect',
       type: 'seat',
     };
@@ -103,7 +102,7 @@ class SeatSetModal extends React.Component {
 
     this.net.node().tooltip(obj => {
       if (obj.type === 'seat' && obj.status === '1') {
-        return [['排', obj.rowIndex], ['坐', obj.columnIndex]];
+        return [['排', obj.rowIndex], ['座', obj.columnIndex]];
       }
     });
 
@@ -119,16 +118,26 @@ class SeatSetModal extends React.Component {
     const { performPackageId, color } = this.props;
     const currentType = item.get('model').type; // 座位type
     const currentStatus = item.get('model').status; // 座位status
+    const currentSeatStatus = item.get('model').seatStatus; // 座位status
     const currentPerformPackageId = item.get('model').performPackageId;
     let newPerformPackageId = null;
     if (currentType === 'seat') {
-      if (currentStatus === '1') {
+      if (currentStatus === '1' && currentSeatStatus !== '2' && currentSeatStatus !== '3') {
         if (area === '1') {
           if (!currentPerformPackageId || currentPerformPackageId === performPackageId) {
             this.net.update(item, {
               color,
               performPackageId,
-              label: SEAT_STATUS_MAP[seatStatus],
+              label: SEAT_STATUS_MAP[Number(seatStatus)],
+              seatStatus,
+            });
+          }
+        } else {
+          if (!currentPerformPackageId || currentPerformPackageId === performPackageId) {
+            this.net.update(item, {
+              color: STATUS_MAP[1],
+              performPackageId: '',
+              label: SEAT_STATUS_MAP[Number(seatStatus)],
               seatStatus,
             });
           }
@@ -193,7 +202,7 @@ class SeatSetModal extends React.Component {
   };
 
   render() {
-    const { type, height } = this.props;
+    const { type, height, colorMap } = this.props;
     const { area, seatStatus } = this.state;
 
     return (
@@ -230,6 +239,22 @@ class SeatSetModal extends React.Component {
           <Button onClick={this.handleSave} type="primary">
             保存
           </Button>
+        </Row>
+        <Row type="flex" justify="end">
+          <div style={{ marginBottom: 20, marginRight: 20 }}>
+            <span style={{ marginRight: 10, verticalAlign: 'middle' }}>可售</span>
+            <img style={{ width: 20, height: 20, verticalAlign: 'middle', backgroundColor: '#0EAB0F' }}/>
+          </div>
+          {
+            colorMap.map(packageColor => {
+              return (
+                <div style={{ marginBottom: 20, marginRight: 20 }}>
+                  <span style={{ marginRight: 10, verticalAlign: 'middle' }}>{packageColor.packageName}</span>
+                  <img style={{ width: 20, height: 20, verticalAlign: 'middle', backgroundColor: packageColor.color }}/>
+                </div>
+              )
+            })
+          }
         </Row>
         <div
           id="seatUpdate"
